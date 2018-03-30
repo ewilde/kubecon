@@ -1,4 +1,5 @@
 # Intro
+* Hi i'm ed, i'm a developer, i work for a payments startup Form3
 * Story about 2 systems, 1 group of engineers
 
 System 1
