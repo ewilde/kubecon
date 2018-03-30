@@ -1,4 +1,21 @@
-version: '2'
+version: '3'
 services:
+  service1a:
+    image: ewilde/http-echo:latest
+    command: -text service1a
+  service1b:
+    image: ewilde/http-echo:latest
+    command: -text service1b
+  service1c:
+    image: ewilde/http-echo:latest
+    command: -text service1c
   load-balancer:
-    image:
+    image: nginx:1.13-alpine
+    volumes:
+      - ./load-balancer/nginx.conf:/etc/nginx/nginx.conf:ro
+    links:
+      - service1a
+      - service1b
+      - service1c
+    ports:
+      - 80:80

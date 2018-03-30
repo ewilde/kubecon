@@ -29,4 +29,6 @@ vet:
 package: build
 	@find ./cmd* -maxdepth 1 -mindepth 1 -type d -exec sh -c '"$(CURDIR)/scripts/docker-package.sh" kubecon {}' \;
 
-.PHONY: build vet fmt fmtcheck errcheck package
+up:
+	@docker-compose --file ./deployments/local/system-1/docker-compose.yml up --build
+.PHONY: build vet fmt fmtcheck errcheck package up
