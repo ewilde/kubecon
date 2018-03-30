@@ -29,6 +29,11 @@ vet:
 package: build
 	@find ./cmd* -maxdepth 1 -mindepth 1 -type d -exec sh -c '"$(CURDIR)/scripts/docker-package.sh" kubecon {}' \;
 
-up:
+up-s1:
 	@docker-compose --file ./deployments/local/system-1/docker-compose.yml up --build -d
-.PHONY: build vet fmt fmtcheck errcheck package up
+	@docker logs -f system1_traffic-simulator_1
+
+down-s1:
+	@docker-compose --file ./deployments/local/system-1/docker-compose.yml down
+
+.PHONY: build vet fmt fmtcheck errcheck package up-s1
