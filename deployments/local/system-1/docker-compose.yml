@@ -19,3 +19,10 @@ services:
       - service1c
     ports:
       - 80:80
+  traffic-simulator:
+    image: loadimpact/k6:0.20.0
+    volumes:
+      - ./traffic-simulator/script.js:/script.js
+    command: ["run", "/script.js"]
+    links:
+      - load-balancer
