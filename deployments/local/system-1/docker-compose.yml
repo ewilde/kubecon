@@ -8,7 +8,7 @@ services:
     command: -text service1b
   service1c:
     image: ewilde/http-echo:latest
-    command: -text service1c
+    command: -text service1c -response-code-rate=90.1 -response-code=503
   load-balancer:
     image: nginx:1.13-alpine
     volumes:

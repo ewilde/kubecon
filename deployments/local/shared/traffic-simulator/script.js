@@ -4,7 +4,7 @@ import { Counter } from "k6/metrics";
 
 export let options = {
   vus: 10,
-  duration: "30s"
+  duration: "300s"
 };
 
 var response200StatusCounter = new Counter("response_200_status");

@@ -16,7 +16,6 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
   "links": [],
   "panels": [
     {
@@ -80,7 +79,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "$$hashKey": "object:1552",
+          "$$hashKey": "object:396",
           "groupBy": [
             {
               "params": [
@@ -118,7 +117,7 @@
         }
       ],
       "thresholds": "0,0",
-      "title": "2xx Success",
+      "title": "2XX : SUCCESS",
       "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
@@ -192,7 +191,6 @@
       "tableColumn": "",
       "targets": [
         {
-          "$$hashKey": "object:1552",
           "groupBy": [
             {
               "params": [
@@ -207,7 +205,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "response_500_status",
+          "measurement": "response_other_status",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -229,8 +227,8 @@
           "tags": []
         }
       ],
-      "thresholds": "0,0,1",
-      "title": "5xx Server errors",
+      "thresholds": "1,10",
+      "title": "5XX : SERVER ERROR",
       "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
@@ -296,5 +294,5 @@
   "timezone": "",
   "title": "Status codes",
   "uid": "QTNOTqzmz",
-  "version": 2
+  "version": 4
 }
