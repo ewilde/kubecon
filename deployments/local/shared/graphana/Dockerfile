@@ -7,8 +7,10 @@ RUN mkdir /var/lib/grafanadb
 ENV GF_PATHS_DATA /var/lib/grafanadb
 
 RUN mkdir -p /var/lib/grafana/dashboards
-COPY ./dashboard.home.json /usr/share/grafana/public/dashboards/home.json
-COPY ./dashboard.status.json /usr/share/grafana/public/dashboards/status.json
+COPY ./dashboards.yml  /etc/grafana/provisioning/dashboards/dashboards.yml
+COPY ./dashboard.home.json  /var/lib/grafana/dashboards/home.json
+COPY ./dashboard.home.json  /usr/share/grafana/public/dashboards/home.json
+COPY ./dashboard.status.json  /var/lib/grafana/dashboards/status.json
 
 
 # Init Grafana sqlite db and preconfigure our data source to be our influxdb kubecon db

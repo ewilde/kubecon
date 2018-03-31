@@ -11,18 +11,25 @@ import (
 	"time"
 
 	"github.com/ewilde/kubecon/cmd/http-echo/version"
+	"math/rand"
 	"strconv"
 )
 
 var (
-	listenFlag  = flag.String("listen", ":5678", "address and port to listen")
-	textFlag    = flag.String("text", "", "text to put on the webpage")
-	versionFlag = flag.Bool("version", false, "display version information")
+	listenFlag       = flag.String("listen", ":5678", "address and port to listen")
+	textFlag         = flag.String("text", "", "text to put on the webpage")
+	responseCodeFlag = flag.Int("response-code", 200, "response code to return")
+	responseCodeRate = flag.Float64("response-code-rate", 100.0, "percentage of time to return -responseCode, default to 200 for other results")
+	versionFlag      = flag.Bool("version", false, "display version information")
 
 	// stdoutW and stderrW are for overriding in test.
 	stdoutW = os.Stdout
 	stderrW = os.Stderr
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	flag.Parse()
@@ -47,7 +54,7 @@ func main() {
 
 	// Flag gets printed as a page
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(*textFlag))))
+	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(*textFlag, *responseCodeFlag, *responseCodeRate))))
 
 	// Health endpoint
 	mux.HandleFunc("/health", withAppHeaders(httpHealth()))
@@ -83,7 +90,7 @@ func main() {
 	os.Exit(2)
 }
 
-func httpEcho(v string) http.HandlerFunc {
+func httpEcho(text string, code int, rate float64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Query().Get("status") != "" {
@@ -93,7 +100,13 @@ func httpEcho(v string) http.HandlerFunc {
 			}
 		}
 
-		fmt.Fprintln(w, v)
+		if code != 200 {
+			if rand.Float64() <= rate/100 {
+				w.WriteHeader(code)
+			}
+		}
+
+		fmt.Fprintln(w, text)
 	}
 }
 
