@@ -19,8 +19,9 @@ var (
 	listenFlag       = flag.String("listen", ":5678", "address and port to listen")
 	textFlag         = flag.String("text", "", "text to put on the webpage")
 	responseCodeFlag = flag.Int("response-code", 200, "response code to return")
-	responseCodeRate = flag.Float64("response-code-rate", 100.0, "percentage of time to return -responseCode, default to 200 for other results")
+	responseCodeRate = flag.Float64("response-rate", 100.0, "percentage of time to return -responseCode, default to 200 for other results")
 	versionFlag      = flag.Bool("version", false, "display version information")
+	delayFlag        = flag.Float64("response-delay", 0, "delay request in ms every -response-rate")
 
 	// stdoutW and stderrW are for overriding in test.
 	stdoutW = os.Stdout
@@ -54,7 +55,7 @@ func main() {
 
 	// Flag gets printed as a page
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(*textFlag, *responseCodeFlag, *responseCodeRate))))
+	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(*textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag))))
 
 	// Health endpoint
 	mux.HandleFunc("/health", withAppHeaders(httpHealth()))
@@ -90,7 +91,7 @@ func main() {
 	os.Exit(2)
 }
 
-func httpEcho(text string, code int, rate float64) http.HandlerFunc {
+func httpEcho(text string, code int, rate float64, delay float64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Query().Get("status") != "" {
@@ -100,13 +101,26 @@ func httpEcho(text string, code int, rate float64) http.HandlerFunc {
 			}
 		}
 
-		if code != 200 {
-			if rand.Float64() <= rate/100 {
-				w.WriteHeader(code)
-			}
-		}
+		setResponseCode(code, rate, w)
+		setTimeout(delay, rate)
 
 		fmt.Fprintln(w, text)
+	}
+}
+
+func setResponseCode(code int, rate float64, w http.ResponseWriter) {
+	if code != 200 {
+		if rand.Float64() <= rate/100 {
+			w.WriteHeader(code)
+		}
+	}
+}
+
+func setTimeout(delay float64, rate float64) {
+	if delay != 0 {
+		if rand.Float64() <= rate/100 {
+			time.Sleep(time.Duration(float64(time.Millisecond) * delay))
+		}
 	}
 }
 

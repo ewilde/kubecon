@@ -5,10 +5,10 @@ services:
     command: -text service1a
   service1b:
     image: ewilde/http-echo:latest
-    command: -text service1b
+    command:  -text service1c -response-rate=0.1 -response-delay=1000
   service1c:
     image: ewilde/http-echo:latest
-    command: -text service1c -response-code-rate=90.1 -response-code=503
+    command: -text service1c -response-rate=1 -response-code=503
   load-balancer:
     image: nginx:1.13-alpine
     volumes:
