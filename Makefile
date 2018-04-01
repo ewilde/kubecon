@@ -1,5 +1,11 @@
 .DEFAULT_GOAL := default
 
+OPENCMD := open
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	OPENCMD = xdg-open
+endif
+
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
@@ -31,6 +37,7 @@ package: build
 
 up-s1:
 	@docker-compose --file ./deployments/local/system-1/docker-compose.yml up --build -d
+	$(OPENCMD) http://localhost:3000
 	@docker logs -f system1_traffic-simulator_1
 
 down-s1:

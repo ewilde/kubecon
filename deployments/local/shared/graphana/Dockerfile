@@ -18,5 +18,5 @@ RUN bash -c '/run.sh & sleep 15 && curl -s -H "Content-Type: application/json" -
     --data '"'"'{"name": "myinfluxdb", "type": "influxdb", "access": "proxy", "url": "http://influxdb:8086", "database": "kubecon", "isDefault": true}'"'"' \
     http://admin:admin@localhost:3000/api/datasources \
     && kill -SIGINT %%'
-
+RUN grafana-cli plugins install mtanda-histogram-panel
 CMD ["/run.sh"]
