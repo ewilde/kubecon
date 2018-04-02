@@ -299,7 +299,7 @@
               },
               {
                 "params": [],
-                "type": "mean"
+                "type": "distinct"
               }
             ]
           ],
@@ -319,7 +319,7 @@
       "xBucketSize": null,
       "yAxis": {
         "decimals": null,
-        "format": "short",
+        "format": "ms",
         "logBase": 1,
         "max": null,
         "min": null,
@@ -383,5 +383,5 @@
   "timezone": "",
   "title": "Status codes",
   "uid": "QTNOTqzmz",
-  "version": 3
+  "version": 2
 }

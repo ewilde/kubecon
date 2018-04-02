@@ -43,4 +43,12 @@ up-s1:
 down-s1:
 	@docker-compose --file ./deployments/local/system-1/docker-compose.yml down
 
+up-s2:
+	@docker-compose --file ./deployments/local/system-2/docker-compose.yml up --build -d
+	@docker logs -f system2_wait-for-services_1
+	@docker logs -f system2_traffic-simulator_1
+
+down-s2:
+	@docker-compose --file ./deployments/local/system-2/docker-compose.yml down
+
 .PHONY: build vet fmt fmtcheck errcheck package up-s1

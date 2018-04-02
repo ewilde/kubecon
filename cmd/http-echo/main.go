@@ -119,7 +119,9 @@ func setResponseCode(code int, rate float64, w http.ResponseWriter) {
 func setTimeout(delay float64, rate float64) {
 	if delay != 0 {
 		if rand.Float64() <= rate/100 {
-			time.Sleep(time.Duration(float64(time.Millisecond) * delay))
+			duration := time.Duration(float64(time.Millisecond) * delay)
+			log.Printf("[INFO] Timeout delay %s.", duration.String())
+			time.Sleep(duration)
 		}
 	}
 }

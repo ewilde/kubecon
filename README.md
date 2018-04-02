@@ -3,6 +3,20 @@
 Project structure based on https://github.com/golang-standards/project-layout
 
 
+# Demo
+## Searching logs
+
+### Service b - has delays sometime
+docker logs system2_service1b_1   2>&1  | grep Timeout
+
+### Service c - error service
+docker logs system2_service1c_1   2>&1  | grep 503
+
+
+### Load-balancer errors
+
+# Toxi-proxy research
+
 ./toxiproxy-server 
 
 ./toxiproxy-cli create example.com --listen 0.0.0.0:8080 --upstream www.example.com:80
