@@ -17,7 +17,7 @@
   "editable": true,
   "gnetId": 2587,
   "graphTooltip": 2,
-  "iteration": 1522421478365,
+  "iteration": 1522670544764,
   "links": [],
   "panels": [
     {
@@ -305,6 +305,7 @@
       "steppedLine": false,
       "targets": [
         {
+          "$$hashKey": "object:720",
           "alias": "Num Errors",
           "dsType": "influxdb",
           "groupBy": [
@@ -321,7 +322,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "errors",
+          "measurement": "response_other_status",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "C",
@@ -1623,7 +1624,7 @@
       "type": "row"
     }
   ],
-  "refresh": "1s",
+  "refresh": false,
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],

@@ -3,14 +3,26 @@ services:
   service1a:
     image: ewilde/http-echo:latest
     command: -text service1a
+    environment:
+      - SERVICE_NAME=service1
 
   service1b:
     image: ewilde/http-echo:latest
-    command:  -text service1b -response-rate=0.1 -response-delay=1000
+    command:  -text service1b -response-rate=2 -response-delay=1000
+    environment:
+      - SERVICE_NAME=service1
 
   service1c:
     image: ewilde/http-echo:latest
-    command: -text service1c -response-rate=1 -response-code=503
+    command: -text service1c -response-rate=40 -response-code=503
+    environment:
+      - SERVICE_NAME=service1
+
+  service1d:
+    image: ewilde/http-echo:latest
+    command: -text service1d
+    environment:
+      - SERVICE_NAME=service1
 
   load-balancer:
     image: nginx:1.13-alpine
