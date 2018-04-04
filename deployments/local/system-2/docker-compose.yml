@@ -48,7 +48,7 @@ services:
     depends_on:
       - consul-registrator
     volumes:
-      - ./linkerd/config.yml:/config.yml
+      - ./linkerd/linkerd.config.yml:/config.yml
     command: /config.yml
     ports:
       - 4140:4140
