@@ -18,3 +18,7 @@ func TestRandom_float(t *testing.T) {
 		}
 	}
 }
+
+func TestMain(m *testing.M) {
+
+}

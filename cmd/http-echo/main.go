@@ -94,6 +94,10 @@ func main() {
 func httpEcho(text string, code int, rate float64, delay float64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		defer func(begin time.Time) {
+			trace("select * from Orders;", time.Since(begin))
+		}(time.Now().UTC())
+
 		if r.URL.Query().Get("status") != "" {
 			status, err := strconv.Atoi(r.URL.Query().Get("status"))
 			if err == nil {
