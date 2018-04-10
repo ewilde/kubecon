@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ewilde/kubecon/cmd/http-echo/version"
+	"io"
 	"math/rand"
 	"strconv"
 )
@@ -55,7 +56,7 @@ func main() {
 
 	// Flag gets printed as a page
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(*textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag))))
+	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(stdoutW, *textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag))))
 
 	// Health endpoint
 	mux.HandleFunc("/health", withAppHeaders(httpHealth()))
@@ -91,11 +92,13 @@ func main() {
 	os.Exit(2)
 }
 
-func httpEcho(text string, code int, rate float64, delay float64) http.HandlerFunc {
+func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer func(begin time.Time) {
-			trace("select * from Orders;", time.Since(begin))
+			if err := trace(logOut, "select * from Orders;", time.Since(begin)); err != nil {
+				fmt.Fprintf(logOut, "%v", err)
+			}
 		}(time.Now().UTC())
 
 		if r.URL.Query().Get("status") != "" {
@@ -134,4 +137,11 @@ func httpHealth() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, `{"status":"ok"}`)
 	}
+}
+
+func valueOrDefault(value, def string) string {
+	if value != "" {
+		return value
+	}
+	return def
 }

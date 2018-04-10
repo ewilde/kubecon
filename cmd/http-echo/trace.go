@@ -1,20 +1,38 @@
 package main
 
 import (
-	"time"
-	"github.com/openzipkin/zipkin-go-opentracing"
-	"math/rand"
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"fmt"
 	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/openzipkin/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"io"
+	"log"
+	"math/rand"
+	"os"
+	"sync"
+	"time"
 )
 
-var collector, _ = zipkintracer.NewScribeCollector("localhost:9410", time.Second, zipkintracer.ScribeBatchSize(0), zipkintracer.ScribeBatchInterval(time.Millisecond))
+var collector zipkintracer.Collector
 
 var traceID = int64(rangeIn(100000, 999999))
 var spanID = int64(rangeIn(100000, 999999))
+var once sync.Once
+var zipkinHostAndPort = fmt.Sprintf("%s:%s",
+	valueOrDefault(os.Getenv("ZIPKIN_HOST"), "localhost"),
+	valueOrDefault(os.Getenv("ZIPKIN_PORT"), "9410"))
 
-func trace(message string, duration time.Duration) error {
+func trace(logOut io.Writer, message string, duration time.Duration) error {
+	once.Do(func() {
+		var err error
+		collector, err = zipkintracer.NewScribeCollector(zipkinHostAndPort, time.Second, zipkintracer.ScribeBatchSize(0), zipkintracer.ScribeBatchInterval(time.Millisecond))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
 	traceID += 1
+	spanID += 1
 	var (
 		methodName   = "method"
 		traceID      = traceID
@@ -26,6 +44,7 @@ func trace(message string, duration time.Duration) error {
 	span := makeNewSpan(methodName, traceID, spanID, parentSpanID, duration, true)
 	annotate(span, time.Now(), value, nil)
 
+	fmt.Fprint(logOut, fmt.Sprintf("[INFO] Traceid:%d spanid:%d parentid:%d\n", traceID, spanID, parentSpanID))
 	return collector.Collect(span)
 }
 

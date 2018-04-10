@@ -5,6 +5,7 @@ services:
     command: -text service1a
     environment:
       - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
     depends_on:
       - linkerd
 
@@ -13,6 +14,7 @@ services:
     command:  -text service1b -response-rate=2 -response-delay=1000
     environment:
       - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
     depends_on:
       - linkerd
 
@@ -21,6 +23,7 @@ services:
     command: -text service1c -response-rate=40 -response-code=503
     environment:
       - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
     depends_on:
       - linkerd
 
@@ -29,6 +32,7 @@ services:
     command: -text service1d
     environment:
       - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
     depends_on:
       - linkerd
 

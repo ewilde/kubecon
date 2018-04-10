@@ -1,8 +1,10 @@
 package main
 
 import (
+	"gopkg.in/ory-am/dockertest.v3"
 	"log"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 )
@@ -20,5 +22,19 @@ func TestRandom_float(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		log.Fatalf("Could not connect to docker: %s", err)
+	}
 
+	container, err := newZipkinContainer(pool)
+	if err != nil {
+		log.Fatalf("Could create zipkin container: %s", err)
+	}
+
+	code := m.Run()
+
+	container.Stop()
+
+	os.Exit(code)
 }

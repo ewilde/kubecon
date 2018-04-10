@@ -1,13 +1,14 @@
 package main
 
 import (
-	"log"
-	"fmt"
-	"time"
-	"github.com/fsouza/go-dockerclient"
-	"gopkg.in/ory-am/dockertest.v3"
-	"strings"
 	"errors"
+	"fmt"
+	"github.com/fsouza/go-dockerclient"
+	"github.com/parnurzeal/gorequest"
+	"gopkg.in/ory-am/dockertest.v3"
+	"log"
+	"strings"
+	"time"
 )
 
 type container interface {
@@ -21,18 +22,22 @@ type zipkinContainer struct {
 	Uri      string
 }
 
-func newZipkinContainer(pool *dockertest.Pool, ) (container *container, err error) {
+var zipkinVersion = "2.6.1"
+
+func newZipkinContainer(pool *dockertest.Pool) (container container, err error) {
 	envVars := []string{
-		"SCRIBE=true",
+		"SCRIBE_ENABLED=true",
 	}
 
 	options := &dockertest.RunOptions{
 		Name:         "zipkin",
-		Repository:   "openzipkin/zipkin:2.6.1",
+		Repository:   "openzipkin/zipkin",
+		Tag:          zipkinVersion,
 		Env:          envVars,
-		ExposedPorts: []string{"5601"},
+		ExposedPorts: []string{"9410", "9411"},
 		PortBindings: map[docker.Port][]docker.PortBinding{
-			"5601/tcp": {{HostIP: "", HostPort: "5601"}},
+			"9410/tcp": {{HostIP: "", HostPort: "9410"}},
+			"9411/tcp": {{HostIP: "", HostPort: "9411"}},
 		},
 	}
 
@@ -41,7 +46,7 @@ func newZipkinContainer(pool *dockertest.Pool, ) (container *container, err erro
 		return nil, err
 	}
 
-	zipkinUri := fmt.Sprintf("http://localhost:%v", resource.GetPort("5601/tcp"))
+	zipkinUri := fmt.Sprintf("http://localhost:%v", resource.GetPort("9411/tcp"))
 	pool.MaxWait = time.Minute * 1
 	if err := pool.Retry(func() error {
 
@@ -60,7 +65,7 @@ func newZipkinContainer(pool *dockertest.Pool, ) (container *container, err erro
 	}
 
 	name := getContainerName(resource)
-	log.Printf("Kibana %s (%v): up\n", kibanaVersion, name)
+	log.Printf("Zipkin %s (%v): up\n", zipkinVersion, name)
 
 	return &zipkinContainer{
 		Name:     name,
@@ -74,7 +79,8 @@ func getContainerName(container *dockertest.Resource) string {
 	return strings.TrimPrefix(container.Container.Name, "/")
 }
 
-func checkZipkinServiceIsStarted(client **gorequest.SuperAgent, zipkinUri string) error {
+func checkZipkinServiceIsStarted(zipkinUri string) error {
+	client := gorequest.New()
 	response, body, err := client.Get(zipkinUri + "/health").End()
 
 	if err != nil {

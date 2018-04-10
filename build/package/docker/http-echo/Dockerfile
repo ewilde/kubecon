@@ -3,7 +3,7 @@ FROM golang:alpine AS build-env
 ARG REPONAME
 ARG APPNAME
 ENV SRCPATH $GOPATH/src/github.com/ewilde/$REPONAME
-
+RUN apk update && apk add build-base
 COPY ./ $SRCPATH
 
 RUN go install github.com/ewilde/$REPONAME/cmd/$APPNAME
