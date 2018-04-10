@@ -1,13 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"github.com/parnurzeal/gorequest"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-func TestTrace(t *testing.T) {
+func TestTraceViaService(t *testing.T) {
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -33,5 +35,18 @@ func TestTrace(t *testing.T) {
 	if want != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
 
+	}
+}
+
+func TestTraceViaLinkerd(t *testing.T) {
+	client := gorequest.New()
+	response, body, err := client.Get("http://localhost:4140/service1").End()
+
+	if err != nil {
+		t.Fatal(err[0])
+	}
+
+	if response.StatusCode >= 400 {
+		t.Fatal(fmt.Sprintf("Status: %d, %s", response.StatusCode, body))
 	}
 }

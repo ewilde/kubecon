@@ -1,4 +1,4 @@
-package main
+package containers
 
 import (
 	"errors"
@@ -24,7 +24,7 @@ type zipkinContainer struct {
 
 var zipkinVersion = "2.6.1"
 
-func newZipkinContainer(pool *dockertest.Pool) (container container, err error) {
+func NewZipkinContainer(pool *dockertest.Pool) (container container, err error) {
 	envVars := []string{
 		"SCRIBE_ENABLED=true",
 	}

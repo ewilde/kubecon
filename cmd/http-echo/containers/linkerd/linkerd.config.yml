@@ -1,0 +1,46 @@
+namers:
+- kind: io.l5d.fs
+  rootDir: /disco
+
+admin:
+  port: 9990
+  ip: 0.0.0.0
+
+routers:
+
+# This service proxies traffic to services looked up in consul
+- protocol: http
+  service:
+    kind: io.l5d.global
+    responseClassifier:
+      kind: io.l5d.http.retryableIdempotent5XX
+    retries:
+      budget:
+        percentCanRetry: 2.0  # For every successful call allow 2 retries
+
+  client:
+    kind: io.l5d.global
+    requestAttemptTimeoutMs: 200 # Timeout request either original or retry after 200ms
+
+  label: http
+  identifier:
+    kind: io.l5d.path
+    segments: 1
+    consume: true
+  dtab: |
+    dtab: /svc => /#/io.l5d.fs;
+  servers:
+  - port: 4140
+    ip: 0.0.0.0
+
+telemetry:
+- kind: io.l5d.zipkin
+  host: zipkin
+  port: 9410
+  sampleRate: 1.00
+
+- kind: io.l5d.recentRequests
+  sampleRate: 0.25
+
+usage:
+  orgId: linkerd-demo
