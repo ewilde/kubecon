@@ -54,13 +54,15 @@ func main() {
 		os.Exit(127)
 	}
 
-	// Flag gets printed as a page
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(stdoutW, *textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag))))
+	NewServer(*textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag)
+}
 
+func NewServer(text string, code int, rate float64, delay float64) {
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(stdoutW, text, code, rate, delay))))
 	// Health endpoint
 	mux.HandleFunc("/health", withAppHeaders(httpHealth()))
-
 	server := &http.Server{
 		Addr:    *listenFlag,
 		Handler: mux,
@@ -73,21 +75,16 @@ func main() {
 		}
 		close(serverCh)
 	}()
-
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, os.Interrupt)
-
 	// Wait for interrupt
 	<-signalCh
-
 	log.Printf("[INFO] received interrupt, shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("[ERR] failed to shutdown server: %s", err)
 	}
-
 	// If we got this far, it was an interrupt, so don't exit cleanly
 	os.Exit(2)
 }

@@ -1,6 +1,6 @@
 namers:
 - kind: io.l5d.fs
-  rootDir: /disco
+  rootDir: /config/disco
 
 admin:
   port: 9990
@@ -28,7 +28,7 @@ routers:
     segments: 1
     consume: true
   dtab: |
-    dtab: /svc => /#/io.l5d.fs;
+    /svc => /#/io.l5d.fs;
   servers:
   - port: 4140
     ip: 0.0.0.0

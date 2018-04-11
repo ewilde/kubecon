@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"path/filepath"
 	"time"
+	"os"
 )
 
 var linkerdVersion = "1.3.6"
@@ -33,11 +33,12 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 		Name:         "linkerd",
 		Repository:   "buoyantio/linkerd",
 		Tag:          linkerdVersion,
-		ExposedPorts: []string{"9990,4140"},
+		ExposedPorts: []string{"9990", "4140"},
 		Links:        []string{zipkinContainerName},
-		Mounts:       []string{fmt.Sprintf("%s:/config/", filepath.Join(getCurrentPath(), "cmd/http-echo/containers/linkerd"))},
+		Mounts:       []string{fmt.Sprintf("%s:/config/", filepath.Join(getCurrentPath(), "containers/linkerd"))},
 		PortBindings: map[docker.Port][]docker.PortBinding{
 			"9990/tcp": {{HostIP: "", HostPort: "9990"}},
+			"4140/tcp": {{HostIP: "", HostPort: "4140"}},
 		},
 		Cmd: []string{"/config/linkerd.config.yml"},
 	}
@@ -77,7 +78,7 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 }
 func createServiceDiscoveryFile() error {
 	fileContents := []byte(fmt.Sprintf("%s 80", getOutboundIP().String()))
-	return ioutil.WriteFile(filepath.Join(getCurrentPath(), "deployments/local/system-2/linkerd/disco/service1"), fileContents, 0644)
+	return ioutil.WriteFile(filepath.Join(getCurrentPath(), "containers/linkerd/disco/service1"), fileContents, 0644)
 }
 
 func checkLinkerdServiceIsStarted(linkerdUri string) error {
@@ -96,11 +97,8 @@ func checkLinkerdServiceIsStarted(linkerdUri string) error {
 }
 
 func getCurrentPath() string {
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return dir
+	path, _ := os.Getwd()
+	return path
 }
 
 func getOutboundIP() net.IP {

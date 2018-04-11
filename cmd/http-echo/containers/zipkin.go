@@ -22,7 +22,7 @@ type zipkinContainer struct {
 	Uri      string
 }
 
-var zipkinVersion = "2.6.1"
+var zipkinVersion = "latest" // "2.6.1"
 
 func NewZipkinContainer(pool *dockertest.Pool) (container container, err error) {
 	envVars := []string{

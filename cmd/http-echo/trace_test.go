@@ -15,6 +15,8 @@ func TestTraceViaService(t *testing.T) {
 		t.Fatal(err)
 	}
 
+
+
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(httpLog(stdoutW, httpEcho(stdoutW, "serviceA", 200, 0, 0)))
@@ -39,6 +41,10 @@ func TestTraceViaService(t *testing.T) {
 }
 
 func TestTraceViaLinkerd(t *testing.T) {
+	go func() {
+		NewServer("TestTraceViaService", 200, 0, 0)
+	}()
+
 	client := gorequest.New()
 	response, body, err := client.Get("http://localhost:4140/service1").End()
 
