@@ -22,6 +22,8 @@ func TestRandom_float(t *testing.T) {
 	}
 }
 
+var runningContainers = map[string]containers.Container{}
+
 func TestMain(m *testing.M) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
@@ -33,10 +35,14 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could create zipkin container: %s", err)
 	}
 
+	runningContainers["zipkin"] = zipkin
+
 	linkerd, err := containers.NewLinkerdContainer(pool, "zipkin")
 	if err != nil {
 		log.Fatalf("Could create linkerd container: %s", err)
 	}
+
+	runningContainers["linkerd"] = linkerd
 
 	code := m.Run()
 

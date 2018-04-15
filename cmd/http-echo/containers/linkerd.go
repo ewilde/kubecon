@@ -20,10 +20,10 @@ type linkerdContainer struct {
 	Name     string
 	pool     *dockertest.Pool
 	resource *dockertest.Resource
-	Uri      string
+	uri      string
 }
 
-func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (container container, err error) {
+func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (container Container, err error) {
 
 	if err := createServiceDiscoveryFile(); err != nil {
 		return nil, err
@@ -62,10 +62,6 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 		log.Fatalf("Could not connect to kibana: %s", err)
 	}
 
-	if err != nil {
-		log.Fatalf("Could not connect to kibana: %s", err)
-	}
-
 	name := getContainerName(resource)
 	log.Printf("linkerd %s (%v): up\n", linkerdVersion, name)
 
@@ -73,7 +69,7 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 		Name:     name,
 		pool:     pool,
 		resource: resource,
-		Uri:      linkerdUri,
+		uri:      linkerdUri,
 	}, nil
 }
 func createServiceDiscoveryFile() error {
@@ -117,6 +113,10 @@ func getOutboundIP() net.IP {
 	return localAddr.IP
 }
 
-func (z *linkerdContainer) Stop() error {
-	return z.pool.Purge(z.resource)
+func (l *linkerdContainer) Stop() error {
+	return l.pool.Purge(l.resource)
+}
+
+func (l *linkerdContainer) GetUri(id string) string {
+	return fmt.Sprintf("http://localhost:%s", l.resource.GetPort(id))
 }

@@ -11,20 +11,21 @@ import (
 	"time"
 )
 
-type container interface {
+type Container interface {
 	Stop() error
+	GetUri(id string) string
 }
 
 type zipkinContainer struct {
 	Name     string
 	pool     *dockertest.Pool
 	resource *dockertest.Resource
-	Uri      string
+	uri      string
 }
 
 var zipkinVersion = "latest" // "2.6.1"
 
-func NewZipkinContainer(pool *dockertest.Pool) (container container, err error) {
+func NewZipkinContainer(pool *dockertest.Pool) (container Container, err error) {
 	envVars := []string{
 		"SCRIBE_ENABLED=true",
 	}
@@ -71,7 +72,7 @@ func NewZipkinContainer(pool *dockertest.Pool) (container container, err error) 
 		Name:     name,
 		pool:     pool,
 		resource: resource,
-		Uri:      zipkinUri,
+		uri:      zipkinUri,
 	}, nil
 }
 
@@ -96,4 +97,8 @@ func checkZipkinServiceIsStarted(zipkinUri string) error {
 
 func (z *zipkinContainer) Stop() error {
 	return z.pool.Purge(z.resource)
+}
+
+func (z *zipkinContainer) GetUri(id string) string {
+	return fmt.Sprintf("http://localhost:%s", z.resource.GetPort(id))
 }

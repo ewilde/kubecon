@@ -93,7 +93,7 @@ func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer func(begin time.Time) {
-			if err := trace(logOut, "select * from Orders;", time.Since(begin)); err != nil {
+			if err := trace(r, logOut, "select * from Orders;", time.Since(begin)); err != nil {
 				fmt.Fprintf(logOut, "%v", err)
 			}
 		}(time.Now().UTC())

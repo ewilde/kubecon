@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"errors"
+	"time"
 )
 
 func TestTraceViaService(t *testing.T) {
@@ -47,6 +49,25 @@ func TestTraceViaLinkerd(t *testing.T) {
 
 	client := gorequest.New()
 	response, body, err := client.Get("http://localhost:4140/service1").End()
+
+	if err := retry(func() error {
+		url := fmt.Sprintf("%s/service1", runningContainers["linkerd"].GetUri("4140/tcp"))
+		response, body, err := gorequest.New().
+			Get(url).
+			End()
+
+		if err != nil {
+			return err[0]
+		}
+
+		if response.StatusCode >= 400 {
+			return errors.New(fmt.Sprintf("Status: %d, %s", response.StatusCode, body))
+		}
+
+		return nil
+	}, time.Minute * 2); err != nil {
+		t.Fatal(err)
+	}
 
 	if err != nil {
 		t.Fatal(err[0])
