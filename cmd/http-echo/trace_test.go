@@ -9,6 +9,8 @@ import (
 	"testing"
 	"errors"
 	"time"
+	"log"
+	"encoding/json"
 )
 
 func TestTraceViaService(t *testing.T) {
@@ -38,17 +40,28 @@ func TestTraceViaService(t *testing.T) {
 	want := strings.TrimSpace(rr.Body.String())
 	if want != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
-
 	}
 }
 
 func TestTraceViaLinkerd(t *testing.T) {
-	go func() {
-		NewServer("TestTraceViaService", 200, 0, 0)
-	}()
+	go func() {NewServer("TestTraceViaService", 200, 0, 0)}()
+	if err := retry(func() error {
+		response, body, err := gorequest.New().
+			Get("http://localhost:5678").
+			End()
 
-	client := gorequest.New()
-	response, body, err := client.Get("http://localhost:4140/service1").End()
+		if err != nil {
+			return err[0]
+		}
+
+		if response.StatusCode >= 400 {
+			return errors.New(fmt.Sprintf("Status: %d, %s", response.StatusCode, body))
+		}
+
+		return nil
+	}, time.Minute*2); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := retry(func() error {
 		url := fmt.Sprintf("%s/service1", runningContainers["linkerd"].GetUri("4140/tcp"))
@@ -65,15 +78,34 @@ func TestTraceViaLinkerd(t *testing.T) {
 		}
 
 		return nil
-	}, time.Minute * 2); err != nil {
+	}, time.Minute*2); err != nil {
 		t.Fatal(err)
 	}
 
-	if err != nil {
-		t.Fatal(err[0])
+	log.Println("Got response from linkerd")
+
+	var body string
+	var err []error
+	if _, body, err = gorequest.New().
+		Get("http://localhost:9411/api/v2/traces").
+		End(); err != nil {
+			t.Fatal(err)
 	}
 
-	if response.StatusCode >= 400 {
-		t.Fatal(fmt.Sprintf("Status: %d, %s", response.StatusCode, body))
+	var traces interface{}
+	if err := json.Unmarshal([]byte(body), &traces); err != nil {
+		t.Fatal(err)
 	}
+
+	if data, ok := traces.([]interface{}); ok {
+		if firstItem, ok := data[0].([]interface{}); ok {
+			if len(firstItem) != 2 {
+				t.Errorf("last trace had %d spans expected %d", len(firstItem), 2)
+			}
+
+			return
+		}
+	}
+
+	t.Errorf("Not able to decode trace data")
 }

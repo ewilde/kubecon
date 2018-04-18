@@ -59,7 +59,7 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 
 		return nil
 	}); err != nil {
-		log.Fatalf("Could not connect to kibana: %s", err)
+		log.Fatalf("Could not connect to linkerd: %s", err)
 	}
 
 	name := getContainerName(resource)
@@ -73,7 +73,7 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 	}, nil
 }
 func createServiceDiscoveryFile() error {
-	fileContents := []byte(fmt.Sprintf("%s 80", getOutboundIP().String()))
+	fileContents := []byte(fmt.Sprintf("%s 5678", getOutboundIP().String()))
 	return ioutil.WriteFile(filepath.Join(getCurrentPath(), "containers/linkerd/disco/service1"), fileContents, 0644)
 }
 
