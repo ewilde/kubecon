@@ -37,7 +37,6 @@ package: build
 
 up-s1:
 	@docker-compose --file ./deployments/local/system-1/docker-compose.yml up --build -d
-	$(OPENCMD) http://localhost:3000
 	@docker logs -f system-1_traffic-simulator_1
 
 down-s1:

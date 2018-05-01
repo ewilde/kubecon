@@ -1,40 +1,15 @@
 version: '2'
 services:
-  service1a:
-    image: ewilde/http-echo:tracing
-    command: zipkin:9410 -- /app/http-echo -text service1a
-    environment:
-      - SERVICE_NAME=service1
-      - ZIPKIN_HOST=zipkin
+  traffic-simulator:
+    build: ../shared/traffic-simulator
+    volumes:
+      - ./../shared/traffic-simulator/script.js:/script.js
+    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "300s" , "/script.js"]
     depends_on:
-      - linkerd
-
-  service1b:
-    image: ewilde/http-echo:tracing
-    command: zipkin:9410 -- /app/http-echo -text service1b -response-rate=2 -response-delay=1000
+      - load-balancer
+      - influxdb
     environment:
-      - SERVICE_NAME=service1
-      - ZIPKIN_HOST=zipkin
-    depends_on:
-      - linkerd
-
-  service1c:
-    image: ewilde/http-echo:tracing
-    command: zipkin:9410 -- /app/http-echo -text service1c -response-rate=40 -response-code=503
-    environment:
-      - SERVICE_NAME=service1
-      - ZIPKIN_HOST=zipkin
-    depends_on:
-      - linkerd
-
-  service1d:
-    image: ewilde/http-echo:tracing
-    command: zipkin:9410 -- /app/http-echo -text service1d
-    environment:
-      - SERVICE_NAME=service1
-      - ZIPKIN_HOST=zipkin
-    depends_on:
-      - linkerd
+      - K6_OUT=influxdb=http://influxdb:8086/kubecon
 
   load-balancer:
       image: nginx:1.13-alpine
@@ -73,16 +48,38 @@ services:
     depends_on:
       - consul
 
-  traffic-simulator:
-    build: ../shared/traffic-simulator
-    volumes:
-      - ./../shared/traffic-simulator/script.js:/script.js
-    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "300s" , "/script.js"]
-    depends_on:
-      - load-balancer
-      - influxdb
+  service1a:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1a
     environment:
-      - K6_OUT=influxdb=http://influxdb:8086/kubecon
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
+  service1b:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1b -response-rate=2 -response-delay=1000
+    environment:
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
+  service1c:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1c -response-rate=40 -response-code=503
+    environment:
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
+  service1d:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1d
+    environment:
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
 
   influxdb:
     build: ./../shared/influxdb/
