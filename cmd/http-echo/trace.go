@@ -1,31 +1,31 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
+	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/cenkalti/backoff"
 	"github.com/openzipkin/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"github.com/pkg/errors"
 	"io"
 	"log"
+	"math/rand"
+	"net/http"
 	"os"
 	"sync"
 	"time"
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
-	"github.com/apache/thrift/lib/go/thrift"
-	"math/rand"
-	"net/http"
-	"encoding/base64"
-	"github.com/cenkalti/backoff"
 )
 
 var collector zipkintracer.Collector
 
-var traceID = int64(rangeIn(100000, 999999))
-var spanID = int64(rangeIn(100000, 999999))
 var once sync.Once
 var zipkinHostAndPort = fmt.Sprintf("%s:%s",
 	valueOrDefault(os.Getenv("ZIPKIN_HOST"), "localhost"),
 	valueOrDefault(os.Getenv("ZIPKIN_PORT"), "9410"))
 
-func trace(request *http.Request, logOut io.Writer, message string, duration time.Duration) error {
+func trace(request *http.Request, logOut io.Writer, serviceName string, message string, duration time.Duration) error {
 	once.Do(func() {
 		var err error
 		collector, err = zipkintracer.NewScribeCollector(zipkinHostAndPort, time.Second, zipkintracer.ScribeBatchSize(0), zipkintracer.ScribeBatchInterval(time.Millisecond))
@@ -34,81 +34,69 @@ func trace(request *http.Request, logOut io.Writer, message string, duration tim
 		}
 	})
 
-	traceID += 1
-	spanID += 1
-	var (
-		methodName   = "method"
-		traceID      = traceID
-		spanID       = spanID
-		parentSpanID = int64(0)
-		value        = message
-	)
-
-	span := makeNewSpan(methodName, traceID, spanID, parentSpanID, duration, true)
-	annotate(span, time.Now(), value, nil)
-
-	fmt.Fprint(logOut, fmt.Sprintf("[INFO] Traceid:%d spanid:%d parentid:%d\n", traceID, spanID, parentSpanID))
-	return collector.Collect(span)
-}
-
-/*
-  final String trace64 = httpServletRequest.getHeader("l5d-ctx-trace");
-
-            if(StringUtils.isNotEmpty(trace64)) {
-                final byte[] traceBytes = Base64.getDecoder().decode(trace64);
-                val trace = TraceId.deserialize(traceBytes).get();
-
-                val spanId = trace.spanId().toString();
-                val traceId = trace.traceId().toString();
-                val parentId = trace.parentId().toString();
-
-                String sampled = "0";
-                if(!trace.sampled().isEmpty() && trace.sampled().get() instanceof Boolean && (Boolean)trace.sampled().get()) {
-                    sampled = "1";
-                }
-
-                chain.doFilter(new SpanHttpServletRequest(httpServletRequest, spanId, traceId, parentId, sampled), response);
-                return;
-            }
- */
-func getParentSpanId(request *http.Request) (error) {
-	traceHeaders, ok := request.Header["l5d-ctx-trace"]
-	if !ok {
-		return nil
-	}
-
-	_, err := base64.StdEncoding.DecodeString(traceHeaders[0])
+	var spanID = int64(rangeIn(100000, 999999))
+	parentID, _, traceID, _, err := getParentSpan(logOut, request)
 	if err != nil {
-
 		return err
 	}
 
-	return nil
+	if traceID == 0 {
+		traceID = int64(rangeIn(100000, 999999))
+	}
+
+	timeStamp := time.Now().Add(duration * -1)
+	annotation := &zipkincore.Annotation{
+		Timestamp: timeStamp.UnixNano() / 1e3,
+		Value:     "cs",
+		Host: &zipkincore.Endpoint{
+			ServiceName: serviceName,
+			Ipv4:        int32(binary.BigEndian.Uint32(ipAddress)),
+		},
+	}
+
+	span := makeNewSpan(timeStamp, message, traceID, spanID, parentID, []*zipkincore.Annotation{annotation}, duration, true)
+
+	fmt.Fprint(logOut, fmt.Sprintf("[DEBUG] Traceid:%d spanid:%d parentid:%d duration:%v ms\n", traceID, spanID, parentID, duration.Seconds()*1000))
+	return collector.Collect(span)
 }
 
+func getParentSpan(logOut io.Writer, request *http.Request) (spanID int64, parentID int64, traceID int64, flags int64, err error) {
+	traceHeaders, ok := request.Header["L5d-Ctx-Trace"]
+	if !ok {
+		return 0, 0, 0, 0, nil
+	}
 
-func makeNewSpan(methodName string, traceID, spanID, parentSpanID int64, duration time.Duration, debug bool) *zipkincore.Span {
-	timestamp := time.Now().UnixNano() / 1e3
+	traceBytes, err := base64.StdEncoding.DecodeString(traceHeaders[0])
+	if err != nil {
+		fmt.Fprint(logOut, err)
+		return 0, 0, 0, 0, err
+	}
+
+	if len(traceBytes) != 32 {
+		fmt.Fprint(logOut, "[WARN] Expected 32 bytes")
+
+		return 0, 0, 0, 0, errors.New(fmt.Sprintf("Expected 32 bytes, got %d", len(traceBytes)))
+	}
+
+	spanID = int64(binary.BigEndian.Uint64(traceBytes[:8]))
+	parentID = int64(binary.BigEndian.Uint64(traceBytes[8:16]))
+	traceID = int64(binary.BigEndian.Uint64(traceBytes[16:24]))
+	flags = int64(binary.BigEndian.Uint64(traceBytes[24:32]))
+	return spanID, parentID, traceID, flags, nil
+}
+
+func makeNewSpan(startTime time.Time, methodName string, traceID, spanID, parentSpanID int64, annotations []*zipkincore.Annotation, duration time.Duration, debug bool) *zipkincore.Span {
+	timestamp := startTime.UnixNano() / 1e3
 	return &zipkincore.Span{
-		TraceID:   traceID,
-		Name:      methodName,
-		ID:        spanID,
-		ParentID:  &parentSpanID,
-		Debug:     debug,
-		Duration:  thrift.Int64Ptr(duration.Nanoseconds() * 1000),
-		Timestamp: &timestamp,
+		TraceID:     traceID,
+		Name:        methodName,
+		ID:          spanID,
+		ParentID:    &parentSpanID,
+		Debug:       debug,
+		Duration:    thrift.Int64Ptr(duration.Nanoseconds() / 1000),
+		Timestamp:   &timestamp,
+		Annotations: annotations,
 	}
-}
-
-func annotate(span *zipkincore.Span, timestamp time.Time, value string, host *zipkincore.Endpoint) {
-	if timestamp.IsZero() {
-		timestamp = time.Now()
-	}
-	span.Annotations = append(span.Annotations, &zipkincore.Annotation{
-		Timestamp: timestamp.UnixNano() / 1e3,
-		Value:     value,
-		Host:      host,
-	})
 }
 
 func rangeIn(low, hi int) int {

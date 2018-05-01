@@ -8,10 +8,9 @@ import (
 	"gopkg.in/ory-am/dockertest.v3"
 	"io/ioutil"
 	"log"
-	"net"
+	"os"
 	"path/filepath"
 	"time"
-	"os"
 )
 
 var linkerdVersion = "1.3.6"
@@ -23,9 +22,9 @@ type linkerdContainer struct {
 	uri      string
 }
 
-func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (container Container, err error) {
+func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string, ipAddress string) (container Container, err error) {
 
-	if err := createServiceDiscoveryFile(); err != nil {
+	if err := createServiceDiscoveryFile(ipAddress); err != nil {
 		return nil, err
 	}
 
@@ -72,8 +71,8 @@ func NewLinkerdContainer(pool *dockertest.Pool, zipkinContainerName string) (con
 		uri:      linkerdUri,
 	}, nil
 }
-func createServiceDiscoveryFile() error {
-	fileContents := []byte(fmt.Sprintf("%s 5678", getOutboundIP().String()))
+func createServiceDiscoveryFile(ipAddress string) error {
+	fileContents := []byte(fmt.Sprintf("%s 5678", ipAddress))
 	return ioutil.WriteFile(filepath.Join(getCurrentPath(), "containers/linkerd/disco/service1"), fileContents, 0644)
 }
 
@@ -95,22 +94,6 @@ func checkLinkerdServiceIsStarted(linkerdUri string) error {
 func getCurrentPath() string {
 	path, _ := os.Getwd()
 	return path
-}
-
-func getOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Printf("[WARN] error closing connection for ip check %v", err)
-		}
-	}()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
-	return localAddr.IP
 }
 
 func (l *linkerdContainer) Stop() error {
