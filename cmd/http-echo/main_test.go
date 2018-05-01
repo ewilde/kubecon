@@ -1,20 +1,64 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"github.com/ewilde/kubecon/cmd/http-echo/containers"
+	"github.com/parnurzeal/gorequest"
+	"gopkg.in/ory-am/dockertest.v3"
 	"log"
-	"math/rand"
+	"os"
 	"testing"
 	"time"
 )
 
-func TestRandom_float(t *testing.T) {
-	rate := 0.1
-	delay := 1000.0
+var runningContainers = map[string]containers.Container{}
 
-	for i := 0; i < 10000; i++ {
-		if rand.Float64() <= rate/100 {
-			duration := time.Duration(float64(time.Millisecond) * delay)
-			log.Printf("[INFO] Will delay for %s.", duration.String())
+func TestMain(m *testing.M) {
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		log.Fatalf("Could not connect to docker: %s", err)
+	}
+
+	zipkin, err := containers.NewZipkinContainer(pool)
+	if err != nil {
+		log.Fatalf("Could create zipkin container: %s", err)
+	}
+
+	runningContainers["zipkin"] = zipkin
+
+	linkerd, err := containers.NewLinkerdContainer(pool, "zipkin", ipAddress.String())
+	if err != nil {
+		log.Fatalf("Could create linkerd container: %s", err)
+	}
+
+	runningContainers["linkerd"] = linkerd
+
+	code := m.Run()
+
+	linkerd.Stop()
+	zipkin.Stop()
+
+	os.Exit(code)
+}
+
+func startServer(t *testing.T) {
+	go func() { NewServer("TestTraceViaService", 200, 0, 0) }()
+	if err := retry(func() error {
+		response, body, err := gorequest.New().
+			Get("http://localhost:5678").
+			End()
+
+		if err != nil {
+			return err[0]
 		}
+
+		if response.StatusCode >= 400 {
+			return errors.New(fmt.Sprintf("Status: %d, %s", response.StatusCode, body))
+		}
+
+		return nil
+	}, time.Minute*2); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -1,36 +1,15 @@
 version: '2'
 services:
-  service1a:
-    image: ewilde/http-echo:latest
-    command: -text service1a
-    environment:
-      - SERVICE_NAME=service1
+  traffic-simulator:
+    build: ../shared/traffic-simulator
+    volumes:
+      - ./../shared/traffic-simulator/script.js:/script.js
+    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "300s" , "/script.js"]
     depends_on:
-      - linkerd
-
-  service1b:
-    image: ewilde/http-echo:latest
-    command:  -text service1b -response-rate=2 -response-delay=1000
+      - load-balancer
+      - influxdb
     environment:
-      - SERVICE_NAME=service1
-    depends_on:
-      - linkerd
-
-  service1c:
-    image: ewilde/http-echo:latest
-    command: -text service1c -response-rate=40 -response-code=503
-    environment:
-      - SERVICE_NAME=service1
-    depends_on:
-      - linkerd
-
-  service1d:
-    image: ewilde/http-echo:latest
-    command: -text service1d
-    environment:
-      - SERVICE_NAME=service1
-    depends_on:
-      - linkerd
+      - K6_OUT=influxdb=http://influxdb:8086/kubecon
 
   load-balancer:
       image: nginx:1.13-alpine
@@ -40,6 +19,7 @@ services:
         - service1a
         - service1b
         - service1c
+        - service1d
       ports:
         - 80:80
 
@@ -47,6 +27,7 @@ services:
     image: buoyantio/linkerd:1.3.6
     depends_on:
       - consul-registrator
+      - zipkin
     volumes:
       - ./linkerd/linkerd.config.yml:/config.yml
     command: /config.yml
@@ -67,22 +48,43 @@ services:
     depends_on:
       - consul
 
-  traffic-simulator:
-    image: loadimpact/k6:0.20.0
-    volumes:
-      - ./../shared/traffic-simulator/script.js:/script.js
-    command: ["run", "--vus", "10", "--duration", "300s" , "/script.js"]
-    depends_on:
-      - load-balancer
-      - influxdb
-      - wait-for-services
+  service1a:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1a
     environment:
-      - K6_OUT=influxdb=http://influxdb:8086/kubecon
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
+  service1b:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1b -response-rate=2 -response-delay=1000
+    environment:
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
+  service1c:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1c -response-rate=40 -response-code=503
+    environment:
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
+  service1d:
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1d
+    environment:
+      - SERVICE_NAME=service1
+      - ZIPKIN_HOST=zipkin
+    depends_on:
+      - linkerd
 
   influxdb:
     build: ./../shared/influxdb/
     ports:
-      - "8086:8086"
+      - 8086:8086
 
   grafana:
     build: ./../shared/graphana/
@@ -93,12 +95,12 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_BASIC_ENABLED=false
     ports:
-      - "3000:3000"
+      - 3000:3000
 
-  wait-for-services:
-    image: jwilder/dockerize:0.6.0
-    command: ["-wait", "http://service1a:5678", "-wait", "http://service1b:5678", "-wait", "http://service1c:5678", "-wait", "http://linkerd:4140/service1"]
-    depends_on:
-      - service1a
-      - service1b
-      - service1c
+  zipkin:
+    image: openzipkin/zipkin:2.6.1
+    ports:
+      - 9411:9411
+      - 9410:9410
+    environment:
+      - SCRIBE_ENABLED=true

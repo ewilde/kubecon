@@ -11,18 +11,20 @@ import (
 	"time"
 
 	"github.com/ewilde/kubecon/cmd/http-echo/version"
+	"io"
 	"math/rand"
+	"net"
 	"strconv"
 )
 
 var (
-	listenFlag       = flag.String("listen", ":5678", "address and port to listen")
-	textFlag         = flag.String("text", "", "text to put on the webpage")
-	responseCodeFlag = flag.Int("response-code", 200, "response code to return")
-	responseCodeRate = flag.Float64("response-rate", 100.0, "percentage of time to return -responseCode, default to 200 for other results")
-	versionFlag      = flag.Bool("version", false, "display version information")
-	delayFlag        = flag.Float64("response-delay", 0, "delay request in ms every -response-rate")
-
+	listenFlag              = flag.String("listen", ":5678", "address and port to listen")
+	textFlag                = flag.String("text", "", "text to put on the webpage")
+	responseCodeFlag        = flag.Int("response-code", 200, "response code to return")
+	responseCodeRate        = flag.Float64("response-rate", 100.0, "percentage of time to return -responseCode, default to 200 for other results")
+	versionFlag             = flag.Bool("version", false, "display version information")
+	delayFlag               = flag.Float64("response-delay", 0, "delay request in ms every -response-rate")
+	ipAddress        net.IP = nil
 	// stdoutW and stderrW are for overriding in test.
 	stdoutW = os.Stdout
 	stderrW = os.Stderr
@@ -30,11 +32,11 @@ var (
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
+	ipAddress = getOutboundIP()
 }
 
 func main() {
 	flag.Parse()
-
 	// Asking for the version?
 	if *versionFlag {
 		fmt.Fprintln(stderrW, version.HumanVersion)
@@ -53,13 +55,15 @@ func main() {
 		os.Exit(127)
 	}
 
-	// Flag gets printed as a page
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(*textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag))))
+	NewServer(*textFlag, *responseCodeFlag, *responseCodeRate, *delayFlag)
+}
 
+func NewServer(text string, code int, rate float64, delay float64) {
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(stdoutW, text, code, rate, delay))))
 	// Health endpoint
 	mux.HandleFunc("/health", withAppHeaders(httpHealth()))
-
 	server := &http.Server{
 		Addr:    *listenFlag,
 		Handler: mux,
@@ -72,27 +76,28 @@ func main() {
 		}
 		close(serverCh)
 	}()
-
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, os.Interrupt)
-
 	// Wait for interrupt
 	<-signalCh
-
 	log.Printf("[INFO] received interrupt, shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("[ERR] failed to shutdown server: %s", err)
 	}
-
 	// If we got this far, it was an interrupt, so don't exit cleanly
 	os.Exit(2)
 }
 
-func httpEcho(text string, code int, rate float64, delay float64) http.HandlerFunc {
+func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer func(begin time.Time) {
+			if err := trace(r, logOut, "http-echo", "select * from Orders;", time.Since(begin)); err != nil {
+				fmt.Fprintf(logOut, "%v", err)
+			}
+		}(time.Now().UTC())
 
 		if r.URL.Query().Get("status") != "" {
 			status, err := strconv.Atoi(r.URL.Query().Get("status"))
@@ -130,4 +135,11 @@ func httpHealth() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, `{"status":"ok"}`)
 	}
+}
+
+func valueOrDefault(value, def string) string {
+	if value != "" {
+		return value
+	}
+	return def
 }
