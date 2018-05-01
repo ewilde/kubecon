@@ -15,7 +15,6 @@ func TestTraceViaLinkerd(t *testing.T) {
 	callServiceViaLinkerd(t)
 	foundTrace := getSpanFromZipkin(t)
 
-
 	if foundTrace == nil {
 		t.Errorf("Could not find a trace with the expected 3 spans")
 	}
