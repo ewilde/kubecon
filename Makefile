@@ -38,15 +38,14 @@ package: build
 up-s1:
 	@docker-compose --file ./deployments/local/system-1/docker-compose.yml up --build -d
 	$(OPENCMD) http://localhost:3000
-	@docker logs -f system1_traffic-simulator_1
+	@docker logs -f system-1_traffic-simulator_1
 
 down-s1:
 	@docker-compose --file ./deployments/local/system-1/docker-compose.yml down
 
 up-s2:
 	@docker-compose --file ./deployments/local/system-2/docker-compose.yml up --build -d
-	@docker logs -f system2_wait-for-services_1
-	@docker logs -f system2_traffic-simulator_1
+	@docker logs -f system-2_traffic-simulator_1
 
 down-s2:
 	@docker-compose --file ./deployments/local/system-2/docker-compose.yml down

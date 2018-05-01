@@ -8,24 +8,6 @@ let responseOtherStatusCounter = new Counter("response_other_status");
 let numberOfServices = 4;
 let init = new Map();
 
-export function setup() {
-
-  while (true) {
-    let res = http.get("http://load-balancer");
-    if ((res.status === 200) && !init.has(res.body)) {
-      init.set(res.body, true);
-      console.log("[INFO] Warm up found: " + res.body)
-    }
-
-    if (init.size === numberOfServices) {
-      console.log("[INFO] Warm up completed");
-      break;
-    }
-  }
-
-  sleep(5);
-}
-
 export default function() {
   let res = http.get("http://load-balancer");
 
@@ -49,3 +31,20 @@ export default function() {
 
   sleep(1);
 };
+
+export function setup() {
+
+  while (true) {
+    let res = http.get("http://load-balancer");
+    if ((res.status === 200) && !init.has(res.body)) {
+      init.set(res.body, true);
+      console.log("[INFO] Warm up found: " + res.body)
+    }
+
+    if (init.size === numberOfServices) {
+      console.log("[INFO] Warm up completed");
+      break;
+    }
+  }
+
+}

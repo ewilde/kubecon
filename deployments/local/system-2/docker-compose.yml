@@ -1,8 +1,8 @@
 version: '2'
 services:
   service1a:
-    image: ewilde/http-echo:latest
-    command: -text service1a
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1a
     environment:
       - SERVICE_NAME=service1
       - ZIPKIN_HOST=zipkin
@@ -10,8 +10,8 @@ services:
       - linkerd
 
   service1b:
-    image: ewilde/http-echo:latest
-    command:  -text service1b -response-rate=2 -response-delay=1000
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1b -response-rate=2 -response-delay=1000
     environment:
       - SERVICE_NAME=service1
       - ZIPKIN_HOST=zipkin
@@ -19,8 +19,8 @@ services:
       - linkerd
 
   service1c:
-    image: ewilde/http-echo:latest
-    command: -text service1c -response-rate=40 -response-code=503
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1c -response-rate=40 -response-code=503
     environment:
       - SERVICE_NAME=service1
       - ZIPKIN_HOST=zipkin
@@ -28,8 +28,8 @@ services:
       - linkerd
 
   service1d:
-    image: ewilde/http-echo:latest
-    command: -text service1d
+    image: ewilde/http-echo:tracing
+    command: zipkin:9410 -- /app/http-echo -text service1d
     environment:
       - SERVICE_NAME=service1
       - ZIPKIN_HOST=zipkin
@@ -44,6 +44,7 @@ services:
         - service1a
         - service1b
         - service1c
+        - service1d
       ports:
         - 80:80
 
@@ -73,14 +74,13 @@ services:
       - consul
 
   traffic-simulator:
-    image: loadimpact/k6:0.20.0
+    build: ../shared/traffic-simulator
     volumes:
       - ./../shared/traffic-simulator/script.js:/script.js
-    command: ["run", "--vus", "10", "--duration", "300s" , "/script.js"]
+    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "300s" , "/script.js"]
     depends_on:
       - load-balancer
       - influxdb
-      - wait-for-services
     environment:
       - K6_OUT=influxdb=http://influxdb:8086/kubecon
 
@@ -107,11 +107,3 @@ services:
       - 9410:9410
     environment:
       - SCRIBE_ENABLED=true
-
-  wait-for-services:
-    image: jwilder/dockerize:0.6.0
-    command: ["-wait", "http://service1a:5678", "-wait", "http://service1b:5678", "-wait", "http://service1c:5678", "-wait", "http://linkerd:4140/service1"]
-    depends_on:
-      - service1a
-      - service1b
-      - service1c
