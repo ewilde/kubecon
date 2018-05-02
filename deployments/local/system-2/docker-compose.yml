@@ -4,7 +4,7 @@ services:
     build: ../shared/traffic-simulator
     volumes:
       - ./../shared/traffic-simulator/script.js:/script.js
-    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "300s" , "/script.js"]
+    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "3000s" , "/script.js"]
     depends_on:
       - load-balancer
       - influxdb
@@ -49,7 +49,7 @@ services:
       - consul
 
   service1a:
-    image: ewilde/http-echo:tracing
+    image: ewilde/http-echo:latest
     command: zipkin:9410 -- /app/http-echo -text service1a
     environment:
       - SERVICE_NAME=service1
@@ -57,7 +57,7 @@ services:
     depends_on:
       - linkerd
   service1b:
-    image: ewilde/http-echo:tracing
+    image: ewilde/http-echo:latest
     command: zipkin:9410 -- /app/http-echo -text service1b -response-rate=2 -response-delay=1000
     environment:
       - SERVICE_NAME=service1
@@ -65,7 +65,7 @@ services:
     depends_on:
       - linkerd
   service1c:
-    image: ewilde/http-echo:tracing
+    image: ewilde/http-echo:latest
     command: zipkin:9410 -- /app/http-echo -text service1c -response-rate=40 -response-code=503
     environment:
       - SERVICE_NAME=service1
@@ -73,7 +73,7 @@ services:
     depends_on:
       - linkerd
   service1d:
-    image: ewilde/http-echo:tracing
+    image: ewilde/http-echo:latest
     command: zipkin:9410 -- /app/http-echo -text service1d
     environment:
       - SERVICE_NAME=service1
