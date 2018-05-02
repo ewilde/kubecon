@@ -24,7 +24,7 @@ make package
 ## Searching logs
 
 ### Service b - has delays sometime
-docker logs system2_service1b_1   2>&1  | grep Timeout
+docker logs system-2_service1b_1   2>&1  | grep Timeout
 
 ### Service c - error service
-docker logs system2_service1c_1   2>&1  | grep 503
+docker logs system-2_service1c_1   2>&1  | grep 503

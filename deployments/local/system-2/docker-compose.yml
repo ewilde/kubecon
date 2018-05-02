@@ -4,7 +4,7 @@ services:
     build: ../shared/traffic-simulator
     volumes:
       - ./../shared/traffic-simulator/script.js:/script.js
-    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "300s" , "/script.js"]
+    command: ["-wait", "http://load-balancer:80", "-timeout", "20s", "/root/k6", "run", "--vus", "10", "--duration", "3000s" , "/script.js"]
     depends_on:
       - load-balancer
       - influxdb
