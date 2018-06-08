@@ -3,12 +3,13 @@ package containers
 import (
 	"errors"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/parnurzeal/gorequest"
-	"gopkg.in/ory-am/dockertest.v3"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
+	"github.com/parnurzeal/gorequest"
+	"gopkg.in/ory-am/dockertest.v3"
 )
 
 type Container interface {

@@ -4,11 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/cenkalti/backoff"
-	"github.com/openzipkin/zipkin-go-opentracing"
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
-	"github.com/pkg/errors"
 	"io"
 	"log"
 	"math/rand"
@@ -16,6 +11,12 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/cenkalti/backoff"
+	"github.com/openzipkin/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"github.com/pkg/errors"
 )
 
 var collector zipkintracer.Collector

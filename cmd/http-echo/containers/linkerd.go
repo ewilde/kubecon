@@ -3,14 +3,15 @@ package containers
 import (
 	"errors"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/parnurzeal/gorequest"
-	"gopkg.in/ory-am/dockertest.v3"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
+	"github.com/parnurzeal/gorequest"
+	"gopkg.in/ory-am/dockertest.v3"
 )
 
 var linkerdVersion = "1.3.6"

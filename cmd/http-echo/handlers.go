@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/ewilde/kubecon/cmd/http-echo/version"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/ewilde/kubecon/cmd/http-echo/version"
 )
 
 const (

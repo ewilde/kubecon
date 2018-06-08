@@ -35,6 +35,12 @@
   version = "0.11.0"
 
 [[projects]]
+  name = "github.com/caarlos0/env"
+  packages = ["."]
+  revision = "1cddc31c48c56ecd700d873edb9fd5b6f5df922a"
+  version = "v3.3.0"
+
+[[projects]]
   name = "github.com/cenkalti/backoff"
   packages = ["."]
   revision = "61153c768f31ee5f130071d08fc82b85208528de"
@@ -295,6 +301,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fb002ac56ac5669448c9bc62c066d6bbde67974453ce054dbc84bfbab6273ae2"
+  inputs-digest = "4a2672c073099124a6a7bf7c432784f3a178cd790ec77082bf6e591f540621f0"
   solver-name = "gps-cdcl"
   solver-version = 1
