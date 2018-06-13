@@ -4,18 +4,23 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
+	"github.com/caarlos0/env"
 	"github.com/ewilde/kubecon/cmd/http-echo/version"
-	"io"
-	"math/rand"
-	"net"
-	"strconv"
 )
+
+type config struct {
+	DisableZipkin bool `env:"DISABLE_ZIPKIN"`
+}
 
 var (
 	listenFlag              = flag.String("listen", ":5678", "address and port to listen")
@@ -60,8 +65,15 @@ func main() {
 
 func NewServer(text string, code int, rate float64, delay float64) {
 
+	cfg := config{}
+	err := env.Parse(&cfg)
+	if err != nil {
+		log.Fatalf("Could not parse environment configuration: %v", err)
+		os.Exit(1)
+	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(stdoutW, text, code, rate, delay))))
+	mux.HandleFunc("/", httpLog(stdoutW, withAppHeaders(httpEcho(stdoutW, text, code, rate, delay, cfg))))
 	// Health endpoint
 	mux.HandleFunc("/health", withAppHeaders(httpHealth()))
 	server := &http.Server{
@@ -90,10 +102,14 @@ func NewServer(text string, code int, rate float64, delay float64) {
 	os.Exit(2)
 }
 
-func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float64) http.HandlerFunc {
+func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float64, config config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		delayTime := delay
 		defer func(begin time.Time) {
+			if config.DisableZipkin {
+				return
+			}
+
 			if err := trace(r, logOut, "http-echo", "select * from Orders;", time.Since(begin)); err != nil {
 				fmt.Fprintf(logOut, "%v", err)
 			}
@@ -107,8 +123,13 @@ func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float
 		}
 
 		setResponseCode(code, rate, w)
-		setTimeout(delay, rate)
 
+		if r.URL.Query().Get("response-delay") != "" {
+			delayInt, _ := strconv.Atoi(r.URL.Query().Get("response-delay"))
+			delayTime = float64(delayInt)
+		}
+
+		setTimeout(delayTime, rate)
 		fmt.Fprintln(w, text)
 	}
 }

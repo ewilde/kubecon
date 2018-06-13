@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/parnurzeal/gorequest"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/parnurzeal/gorequest"
 )
 
 func TestTraceViaLinkerd(t *testing.T) {

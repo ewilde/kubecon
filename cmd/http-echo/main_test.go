@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/ewilde/kubecon/cmd/http-echo/containers"
-	"github.com/parnurzeal/gorequest"
-	"gopkg.in/ory-am/dockertest.v3"
 	"log"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/ewilde/kubecon/cmd/http-echo/containers"
+	"github.com/parnurzeal/gorequest"
+	"gopkg.in/ory-am/dockertest.v3"
 )
 
 var runningContainers = map[string]containers.Container{}

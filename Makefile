@@ -7,18 +7,18 @@ ifeq ($(UNAME_S),Linux)
 endif
 
 TEST?=$$(go list ./... |grep -v 'vendor')
-GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
+GOIMPORT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
 default: build
 
-build: fmtcheck errcheck vet
+build: goimportscheck errcheck vet
 	@find ./cmd/* -maxdepth 1 -type d -exec go install "{}" \;
 
-fmt:
-	gofmt -w $(GOFMT_FILES)
+goimports:
+	goimports -w $(GOIMPORT_FILES)
 
-fmtcheck:
-	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
+goimportscheck:
+	@sh -c "'$(CURDIR)/scripts/goimportscheck.sh'"
 
 errcheck:
 	@sh -c "'$(CURDIR)/scripts/errcheck.sh'"
@@ -49,4 +49,4 @@ up-s2:
 down-s2:
 	@docker-compose --file ./deployments/local/system-2/docker-compose.yml down
 
-.PHONY: build vet fmt fmtcheck errcheck package up-s1
+.PHONY: build vet goimports goimportscheck errcheck package up-s1
