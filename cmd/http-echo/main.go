@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"time"
 
+	"io/ioutil"
+
 	"github.com/caarlos0/env"
 	"github.com/ewilde/kubecon/cmd/http-echo/version"
 )
@@ -130,7 +132,15 @@ func httpEcho(logOut io.Writer, text string, code int, rate float64, delay float
 		}
 
 		setTimeout(delayTime, rate)
+
 		fmt.Fprintln(w, text)
+		body, _ := ioutil.ReadAll(r.Body)
+		if len(body) > 0 {
+			fmt.Fprintln(w, "")
+			fmt.Fprintln(w, "Body")
+			fmt.Fprintln(w, "----")
+			fmt.Fprintln(w, string(body))
+		}
 	}
 }
 
