@@ -1,5 +1,5 @@
 FROM grafana/grafana
-
+USER root
 RUN apt-get update && apt-get -y install curl
 
 # Change the default data directory (otherwise grafana.db won't persist)
