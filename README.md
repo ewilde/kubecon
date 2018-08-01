@@ -10,7 +10,7 @@ Project structure based on https://github.com/golang-standards/project-layout
 ## Running the demo
 ```bash
 export GOPATH=~/go  # or your alternative Go-language path
-REPOPATH="$GOPATH"/src/github.com/ewilde/kubecon
+REPOPATH="$GOPATH/src/github.com/ewilde/kubecon"
 mkdir -p "$REPOPATH"
 git clone https://github.com/ewilde/kubecon.git "$REPOPATH"
 cd "$REPOPATH"
