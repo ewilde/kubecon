@@ -5,11 +5,15 @@ Project structure based on https://github.com/golang-standards/project-layout
 # The demo
 ## Prerequisites
 * [Docker](https://www.docker.com/community-edition#/download)
+* [Go](https://golang.org/doc/install) and [goimports](https://godoc.org/golang.org/x/tools/cmd/goimports)
 
 ## Running the demo
 ```bash
-git@github.com:ewilde/kubecon.git ewilde-kubecon
-cd ewilde-kubecon
+export GOPATH=~/go  # or your alternative Go-language path
+REPOPATH="$GOPATH"/src/github.com/ewilde/kubecon
+mkdir -p "$REPOPATH"
+git clone https://github.com/ewilde/kubecon.git "$REPOPATH"
+cd "$REPOPATH"
 make package
 ```
 
